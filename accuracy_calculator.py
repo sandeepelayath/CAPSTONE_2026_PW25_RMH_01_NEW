@@ -131,7 +131,7 @@ class SystemAccuracyCalculator:
         Select the most representative action for accuracy assessment based on expected behavior.
         
         Logic:
-        - MALICIOUS/HIGH_RISK: Use peak risk score (during active attack)
+        - MALICIOUS/HIGH_RISK: Use peak blocking action (SHORT_TIMEOUT_BLOCK or REDIRECT_TO_HONEYPOT) if present, else peak risk score
         - LEGITIMATE/LOW_RISK: Use median or latest to avoid temporary spikes
         - MEDIUM_RISK: Use 75th percentile to capture elevated but not peak behavior
         - HONEYPOT: Use first high-confidence detection
@@ -150,8 +150,13 @@ class SystemAccuracyCalculator:
         sorted_actions = sorted(ip_action_list, key=lambda x: x.get('timestamp', ''))
         
         if expected_category in ['MALICIOUS', 'HIGH_RISK']:
-            # For malicious hosts: Find peak risk score during attack period
-            # This represents the system's ability to detect threats at their worst
+            # For malicious/high risk: Prefer peak blocking action
+            blocking_actions = [a for a in ip_action_list if a.get('action_type') in ['SHORT_TIMEOUT_BLOCK', 'REDIRECT_TO_HONEYPOT']]
+            if blocking_actions:
+                # Pick the blocking action with highest risk score
+                return max(blocking_actions, key=lambda x: x.get('risk_score', 0))
+            
+            # Fallback: peak risk score during attack period
             peak_action = max(ip_action_list, key=lambda x: x.get('risk_score', 0))
             
             # Ensure we're not picking an anomalous outlier by checking if peak is reasonable

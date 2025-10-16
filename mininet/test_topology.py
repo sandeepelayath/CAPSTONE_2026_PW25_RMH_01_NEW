@@ -129,6 +129,14 @@ def test_risk_based_mitigations(net):
         info("⚠️ Enhanced attack patterns not available, using fallback")
         test_escalating_risk_pattern(h6, h1, h2)
     
+    info("🚀 Starting Test 5b: Early Malicious Attack Pattern (h8)")
+    try:
+        from enhanced_attack_patterns import generate_intensive_malicious_traffic_h8
+        generate_intensive_malicious_traffic_h8(h8, h1, h2)
+    except ImportError:
+        info("⚠️ Enhanced attack patterns not available, using fallback")
+        test_blacklist_learning(h8, h1, h2)
+   
     # Test 6: Whitelist Recovery Test (Test false positive handling)
     test_whitelist_recovery(h3, h1, h2)
     
