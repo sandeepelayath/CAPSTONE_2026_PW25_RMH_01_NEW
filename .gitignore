@@ -1,0 +1,116 @@
+# Ignore everything by default
+*
+
+# Allow traversing directories
+!*/
+
+# Always keep these core files
+!.gitignore
+!.gitattributes
+!LICENSE
+!README.md
+!CHANGELOG.md
+!requirements.txt
+!pyproject.toml
+!setup.cfg
+!Makefile
+!Dockerfile
+!docker-compose.yml
+
+# Keep code and common text/config files
+!*.py
+!*.sh
+!*.bash
+!*.md
+!*.txt
+!*.rst
+!*.yaml
+!*.yml
+!*.toml
+!*.ini
+!*.cfg
+!*.conf
+
+# Optionally keep notebooks (comment out to ignore)
+# !*.ipynb
+
+# Ignore data files
+*.csv
+*.tsv
+*.parquet
+*.feather
+*.npy
+*.npz
+*.arff
+*.xlsx
+*.xls
+
+# Ignore JSON (logs, metrics, artifacts, etc.)
+*.json
+
+# Ignore logs and traces
+*.log
+*.log.*
+**/logs/
+logs/
+*.out
+*.err
+trace*/
+
+# Ignore ML/Data models and artifacts
+*.h5
+*.keras
+*.pkl
+*.pickle
+*.joblib
+*.pt
+*.pth
+*.ckpt
+*.onnx
+*.tflite
+*.pb
+*.sav
+*.weights
+*.model
+
+# Captures and dumps
+*.pcap
+*.pcapng
+*.dump
+
+# Python caches and build artifacts
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+.build/
+.dist/
+.mypy_cache/
+.pytest_cache/
+.coverage*
+htmlcov/
+.ipynb_checkpoints/
+.cache/
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+.conda/
+pip-wheel-metadata/
+
+# OS/editor files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Temporary files
+*.tmp
+*.temp
+tmp/
+temp/
+*.bak
