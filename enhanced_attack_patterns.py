@@ -26,14 +26,20 @@ def generate_intensive_malicious_traffic_h6(h6, h1, h2):
     
     time.sleep(10)  # Let scans process
     
-    # Phase 2: SQL Injection Barrage
+    # Phase 2: SQL Injection Barrage (non-blocking curls with throttling)
     print("💉 Phase 2: Massive SQL injection barrage...")
     for injection_round in range(10):
         for i in range(50):  # 50 injection attempts per round
             payload = f"DROP%20TABLE%20users;%20DELETE%20FROM%20admin;%20--{i}"
-            h6.cmd(f'curl -s --connect-timeout 1 --max-time 2 "http://{h1.IP()}:8080/login?user=admin&pass={payload}" > /dev/null 2>&1')
-            h6.cmd(f'curl -s --connect-timeout 1 --max-time 2 "http://{h2.IP()}:8081/admin?cmd={payload}" > /dev/null 2>&1')
-            time.sleep(0.05)  # Very rapid fire
+            # Run in background to avoid blocking the test runner
+            h6.cmd(f'curl -s --connect-timeout 1 --max-time 2 "http://{h1.IP()}:8080/login?user=admin&pass={payload}" > /dev/null 2>&1 &')
+            h6.cmd(f'curl -s --connect-timeout 1 --max-time 2 "http://{h2.IP()}:8081/admin?cmd={payload}" > /dev/null 2>&1 &')
+            
+            # Throttle to prevent too many concurrent curls
+            if (i + 1) % 20 == 0:
+                time.sleep(0.2)
+        # Small pause between rounds
+        time.sleep(0.5)
     
     # Phase 3: DDoS-style Traffic Flood
     print("💥 Phase 3: DDoS-style traffic flood...")
@@ -52,9 +58,10 @@ def generate_intensive_malicious_traffic_h6(h6, h1, h2):
     for user in usernames:
         for pwd in passwords:
             for attempt in range(5):  # 5 attempts per combination
-                h6.cmd(f'curl -s --connect-timeout 1 --max-time 2 "http://{h1.IP()}:8080/login?user={user}&pass={pwd}&attempt={attempt}" > /dev/null 2>&1')
-                h6.cmd(f'curl -s --connect-timeout 1 --max-time 2 "http://{h2.IP()}:8081/auth?username={user}&password={pwd}" > /dev/null 2>&1')
-                time.sleep(0.05)
+                h6.cmd(f'curl -s --connect-timeout 1 --max-time 2 "http://{h1.IP()}:8080/login?user={user}&pass={pwd}&attempt={attempt}" > /dev/null 2>&1 &')
+                h6.cmd(f'curl -s --connect-timeout 1 --max-time 2 "http://{h2.IP()}:8081/auth?username={user}&password={pwd}" > /dev/null 2>&1 &')
+                if attempt % 5 == 0:
+                    time.sleep(0.1)
     
     # Phase 5: Directory Traversal and File Access Attempts
     print("📁 Phase 5: Directory traversal attacks...")
@@ -68,9 +75,9 @@ def generate_intensive_malicious_traffic_h6(h6, h1, h2):
     
     for payload in traversal_payloads:
         for i in range(20):
-            h6.cmd(f'curl -s --connect-timeout 1 --max-time 2 "http://{h1.IP()}:8080/file?path={payload}&id={i}" > /dev/null 2>&1')
-            h6.cmd(f'curl -s --connect-timeout 1 --max-time 2 "http://{h2.IP()}:8081/download?file={payload}" > /dev/null 2>&1')
-            time.sleep(0.1)
+            h6.cmd(f'curl -s --connect-timeout 1 --max-time 2 "http://{h1.IP()}:8080/file?path={payload}&id={i}" > /dev/null 2>&1 &')
+            h6.cmd(f'curl -s --connect-timeout 1 --max-time 2 "http://{h2.IP()}:8081/download?file={payload}" > /dev/null 2>&1 &')
+        time.sleep(0.2)
     
     # Phase 6: Command Injection Attempts
     print("⚡ Phase 6: Command injection attacks...")
@@ -86,10 +93,10 @@ def generate_intensive_malicious_traffic_h6(h6, h1, h2):
     for payload in cmd_payloads:
         for i in range(30):
             encoded_payload = payload.replace(' ', '%20').replace(';', '%3B')
-            h6.cmd(f'curl -s --connect-timeout 1 --max-time 2 "http://{h1.IP()}:8080/exec?cmd={encoded_payload}&id={i}" > /dev/null 2>&1')
-            h6.cmd(f'curl -s --connect-timeout 1 --max-time 2 "http://{h2.IP()}:8081/system?command={encoded_payload}" > /dev/null 2>&1')
-            time.sleep(0.1)
-
+            h6.cmd(f'curl -s --connect-timeout 1 --max-time 2 "http://{h1.IP()}:8080/exec?cmd={encoded_payload}&id={i}" > /dev/null 2>&1 &')
+            h6.cmd(f'curl -s --connect-timeout 1 --max-time 2 "http://{h2.IP()}:8081/system?command={encoded_payload}" > /dev/null 2>&1 &')
+        time.sleep(0.2)
+    
     print(f"✅ Intensive malicious attack pattern completed for {h6.name}")
     print("💡 This should generate risk scores > 0.15 for blocking")
 
