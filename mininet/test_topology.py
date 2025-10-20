@@ -828,8 +828,7 @@ def start_network():
     # Start simple honeypot on h9 (10.0.0.9) using honeypot.py in the same folder
     try:
         h9 = net.get('h9')
-        # Start honeypot in background using relative path
-        h9.cmd('nohup python3 honeypot.py &')
+        h9.cmd('python3 mininet/honeypot_server.py &')
         info("[INFO] Simple honeypot started on h9 (10.0.0.9:22) using honeypot.py in mininet folder\n")
     except Exception as e:
         info(f"[WARN] Could not start honeypot on h9: {e}\n")
