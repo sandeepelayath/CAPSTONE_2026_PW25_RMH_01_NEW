@@ -32,49 +32,28 @@ This project implements a machine learning approach for detecting anomalies in e
    pip install -r requirements.txt
    ```
 
-## Dataset Preparation
+## Dataset Preparation and ML MOdel Training
 1. Download the CIC-IDS2017 dataset. (It is also available https://drive.google.com/drive/folders/1kSNKSGeiKaRAoVMY8cIcMQ_FM1rMUdEY)
-2. Store the CSV files inside `ML_Model_Latest/data/` (GitHub does not support large file uploads).
-3. Preprocess the dataset:
+2. Collect data from real-time mininet network traffic and store as csv - to be combined with dataset
    ```bash
-   cd data_processing
-   python preprocess_cicids.py
+   sudo env "PATH=$PATH" python3 mininet-data-collector.py
+   ```
+4. Store the CSV files inside `ML_Model_Latest/data/`
+5. Training the Model
+   ```bash
+   cd ML_Model_Latest
+   python LSTM_RANN_Hybrid_Phase3.py #to fine tune hyperparameters
+   python LSTM_RANN_Hybrid_Phase3_store_final_tuned_model.py #to train and store the model using finetuned hyperparameters
    ```
 
-## Collecting Live Network Traffic
-To collect real-time network traffic for training:
-```bash
-sudo env "PATH=$PATH" python3 mininet-data-collector.py
-```
-This will generate a CSV file inside the `mininet` folder, which should be moved to `ML_Model_Latest/` for training.
-
-## Training the Model
-```bash
-cd ml_model
-python train_model.py
-```
-
 ## Trained models after Finetuning
-1. Sequential LSTM Model is stored in:  Capstone_Phase3/lstm_finetuned_ml_model/
-2. LSTM+RaNN Hybrid model stored in: Capstone_Phase3/lstm_rann_hybrid_finetuned_ml_model/
-3. Load the preferred model in FlowClassifier (Capstone_Phase3/controller/flow_classier.py)
+LSTM+RaNN Hybrid model stored in: Capstone_Phase3/lstm_rann_hybrid_finetuned_ml_model/
+This pre trained model is loaded and used in FlowClassifier (Capstone_Phase3/controller/flow_classier.py)
 
-## Running the SDN Controller
-```bash
-cd controller
-ryu-manager ryu_controller.py
-```
-
-## Running Mininet Topology
-```bash
-cd mininet
-sudo python3 test_topology.py
-```
 
 ## Execution Workflow
 ### Terminal 1 (Controller):
 ```bash
-source ~/myenv39new/bin/activate
 cd Capstone_Phase3/controller/
 ryu-manager ryu_controller.py
 ```
@@ -83,12 +62,12 @@ ryu-manager ryu_controller.py
 cd Capstone_Phase3/mininet/
 sudo python3 test_topology.py
 ```
-### Terminal 3 (Start Analytics Dshboard):
+### Terminal 3 (Start Analytics Dashboard):
 ```bash
 cd Capstone_Phase3/
-./run_dashboard.sh #OPen dashboard in http://127.0.0.1:8501/
+./run_dashboard.sh #Open Admin dashboard in http://127.0.0.1:8501/ and HOneypot dashboard in http://127.0.0.1:8502/
 ```
-### Terminal 4 (CHeck The Accuracy):
+### Terminal 4 (Check The Accuracy after test_topology.py execution completes):
 ```bash
 cd Capstone_Phase3/
 python3 accuracy_calculator.py 
