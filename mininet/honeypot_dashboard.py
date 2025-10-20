@@ -31,9 +31,12 @@ else:
     st.write(f"Total events: {len(df)}")
 
     # Bar chart: Number of events per source IP
-    st.bar_chart(df["src_ip"].value_counts())
+    st.subheader("Honeypot Event Frequency (Bar Chart)")
+    event_counts = df["src_ip"].value_counts()
+    st.bar_chart(event_counts)
 
     # Line chart: Traffic to honeypot from different IPs over time (show all data)
+    st.subheader("Honeypot Event Timeline (Line Chart)")
     df['datetime'] = pd.to_datetime(df['timestamp'], unit='s', errors='coerce')
     df = df.dropna(subset=['datetime'])
     if not df.empty:
@@ -43,5 +46,6 @@ else:
         st.info("No honeypot traffic available.")
 
     # Show only the 10 most recent events, without the 'bytes' column
-    st.markdown('### Recent Honeypot Events')
-    st.dataframe(df[["timestamp", "src_ip", "dst_port", "payload_preview"]].head(10))
+    st.subheader("Recent Honeypot Events")
+    recent_events = df[["timestamp", "src_ip", "dst_port", "payload_preview"]].head(10)
+    st.dataframe(recent_events)

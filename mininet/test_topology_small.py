@@ -9,17 +9,18 @@ class SimpleHoneypotTopo(Topo):
     def build(self):
         s1 = self.addSwitch('s1', protocols='OpenFlow13')
         h1 = self.addHost('h1', ip='10.0.0.1/24')  # Attacker
-        h9 = self.addHost('h9', ip='10.0.0.9/24')  # Honeypot
+        h9 = self.addHost('h9', ip='10.0.0.9/24', privateDirs=[])
+
         self.addLink(h1, s1)
         self.addLink(h9, s1)
 
 def test_honeypot_traffic(net):
     h1 = net.get('h1')
     h9 = net.get('h9')
-    info("\n[TEST] Sending traffic from h1 to honeypot (h9:22)\n")
+    info("\n[TEST] Sending traffic from h1 to honeypot (h9:2222)\n")
     for i in range(5):
-        h1.cmd('nc -w 1 10.0.0.9 22 < /dev/null > /dev/null 2>&1')
-        h1.cmd('telnet 10.0.0.9 22 < /dev/null > /dev/null 2>&1')
+        h1.cmd('nc -w 1 10.0.0.9 2222 < /dev/null > /dev/null 2>&1')
+        h1.cmd('telnet 10.0.0.9 2222 < /dev/null > /dev/null 2>&1')
         time.sleep(0.5)
     info("[TEST] Done sending test traffic.\n")
 

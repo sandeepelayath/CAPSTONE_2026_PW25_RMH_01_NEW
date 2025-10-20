@@ -3,9 +3,10 @@ import threading
 import json
 import os
 import time
+from mininet.log import setLogLevel, info
 
 HONEYPOT_IP = "10.0.0.9"
-HONEYPOT_PORT = 22
+HONEYPOT_PORT = 2222
 LOG_DIR = "/tmp/honeypot_logs/"
 os.makedirs(LOG_DIR, exist_ok=True)
 
@@ -38,7 +39,9 @@ def run_honeypot():
     s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     s.bind((HONEYPOT_IP, HONEYPOT_PORT))
     s.listen(5)
-    print(f"Honeypot listening on {HONEYPOT_IP}:{HONEYPOT_PORT}")
+    #print(f"Honeypot listening on {HONEYPOT_IP}:{HONEYPOT_PORT}")
+    info("[INFO] Honeypot listening on %s:%d\n", HONEYPOT_IP, HONEYPOT_PORT)
+
     while True:
         conn, addr = s.accept()
         threading.Thread(target=handle_connection, args=(conn, addr), daemon=True).start()

@@ -422,14 +422,14 @@ class AnomalyDetectionController(app_manager.RyuApp):
                     )
                     if mitigation_action:
                         self.logger.info(f"🛡️ HONEYPOT LOGGED: {mitigation_action}")
-                        # --- Ensure redirected traffic goes to honeypot port 22 ---
+                        # --- Ensure redirected traffic goes to honeypot port 2222 ---
                         datapath = ev.msg.datapath
                         parser = datapath.ofproto_parser
                         ofproto = datapath.ofproto
                         match = parser.OFPMatch(ipv4_src=source_ip, ipv4_dst=dest_ip, eth_type=0x0800)
                         actions = [
                             parser.OFPActionSetField(ipv4_dst=dest_ip),
-                            parser.OFPActionSetField(tcp_dst=22),
+                            parser.OFPActionSetField(tcp_dst=2222),
                             parser.OFPActionOutput(ofproto.OFPP_NORMAL)
                         ]
                         self.add_flow(datapath, 10, match, actions)

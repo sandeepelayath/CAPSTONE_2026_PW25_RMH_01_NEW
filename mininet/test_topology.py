@@ -32,7 +32,7 @@ class EnhancedTestTopology(Topo):
         # Additional hosts for advanced testing
         h7 = self.addHost('h7', ip='10.0.0.7/24')  # Whitelist candidate
         h8 = self.addHost('h8', ip='10.0.0.8/24')  # Blacklist candidate
-        h9 = self.addHost('h9', ip='10.0.0.9/24')  # Honeypot host
+        h9 = self.addHost('h9', ip='10.0.0.9/24', privateDirs=[])
         
         # Host-to-switch links with traffic control
         self.addLink(h1, s1, cls=TCLink, bw=10)
@@ -122,8 +122,8 @@ def test_risk_based_mitigations(net):
     info("🚀 Starting  explicit traffic to honeypot (h9)")
 
     for attacker in [h3, h4, h7, h8]:
-        attacker.cmd('nc -w 1 10.0.0.9 22 < /dev/null > /dev/null 2>&1')
-        attacker.cmd('telnet 10.0.0.9 22 < /dev/null > /dev/null 2>&1')
+        attacker.cmd('nc -w 1 10.0.0.9 2222 < /dev/null > /dev/null 2>&1')
+        attacker.cmd('telnet 10.0.0.9 2222 < /dev/null > /dev/null 2>&1')
         time.sleep(0.2)
     
     # Test 4: High Risk Traffic (Should trigger short timeout + blacklisting)
@@ -333,9 +333,8 @@ def test_high_risk_traffic(source, target1, target2):
     info("🔨 Performing brute force attack...\n")
     passwords = ['admin', 'password', '123456', 'root', 'qwerty']
     for pwd in passwords:
-        source.cmd(f'timeout 2 nc {target1.IP()} 2222 < /dev/null > /dev/null 2>&1')
+        source.cmd(f'timeout 2 nc {target1.IP()} -w 1 -e /bin/bash -c "echo {pwd} | nc {target1.IP()} 22"')
         time.sleep(0.2)
-    
     info("✅ High-risk traffic pattern completed")
     info("💡 This should trigger immediate blocking and blacklisting\n")
     time.sleep(5)
@@ -545,7 +544,6 @@ def test_honeypot_tripwire(source, honeypot_ip="10.0.0.9"):
     info("\n" + "="*60)
     info("🍯 TEST 9: HONEYPOT TRIPWIRE TEST")
     info("="*60)
-    info(f"📋 Expected: Immediate critical risk (1.0) and blocking")
     info(f"🎯 Source: {source.name} ({source.IP()})")
     info(f"🍯 Honeypot IP: {honeypot_ip}\n")
     
@@ -557,16 +555,11 @@ def test_honeypot_tripwire(source, honeypot_ip="10.0.0.9"):
         
         # Multiple connection attempts with different protocols
         for i in range(10):
-            source.cmd(f'ping -c 1 {honeypot_ip} > /dev/null 2>&1')
-            time.sleep(0.1)
-            source.cmd(f'curl -s --connect-timeout 1 http://{honeypot_ip}:80/ > /dev/null 2>&1')
-            time.sleep(0.1)
-            source.cmd(f'curl -s --connect-timeout 1 http://{honeypot_ip}:443/ > /dev/null 2>&1')
-            time.sleep(0.1)
-            source.cmd(f'nc -w 1 {honeypot_ip} 22 < /dev/null > /dev/null 2>&1')
-            time.sleep(0.1)
-            source.cmd(f'nc -w 1 {honeypot_ip} 3306 < /dev/null > /dev/null 2>&1')
-            time.sleep(0.1)
+            for i in range(10):
+                source.cmd(f'nc -w 1 {honeypot_ip} 2222 < /dev/null > /dev/null 2>&1')
+                time.sleep(0.1)
+                source.cmd(f'telnet {honeypot_ip} 2222 < /dev/null > /dev/null 2>&1')
+                time.sleep(0.1)
         
         info(f"    📊 Sent 50 honeypot access attempts in round {round_num + 1}")
         time.sleep(2)  # Wait between rounds
@@ -825,11 +818,11 @@ def start_network():
     )
     
     net.start()
-    # Start simple honeypot on h9 (10.0.0.9) using honeypot.py in the same folder
+    # Start simple honeypot on h9 (10.0.0.9) using honeypot_server.py in the same folder
     try:
         h9 = net.get('h9')
-        h9.cmd('python3 mininet/honeypot_server.py &')
-        info("[INFO] Simple honeypot started on h9 (10.0.0.9:22) using honeypot.py in mininet folder\n")
+        h9.cmd('python3 honeypot_server.py &')
+        info("[INFO] Simple honeypot started on h9 (10.0.0.9:2222) using honeypot.py in mininet folder\n")
     except Exception as e:
         info(f"[WARN] Could not start honeypot on h9: {e}\n")
     
