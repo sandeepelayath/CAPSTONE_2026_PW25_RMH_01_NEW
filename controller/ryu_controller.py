@@ -154,8 +154,8 @@ class AnomalyDetectionController(app_manager.RyuApp):
         self.mitigation_manager = RiskBasedMitigationManager(
             controller_ref=self,
             low_risk_threshold=0.08,      # Adjusted threshold for low-risk traffic (< 0.08 = ALLOW)
-            medium_risk_threshold=0.12,   # Adjusted threshold triggering rate limiting (0.08-0.12 = RATE_LIMIT)
-            high_risk_threshold=0.15,     # Adjusted threshold for blocking actions (> 0.15 = BLOCK)
+            medium_risk_threshold=0.15,   # Adjusted threshold triggering rate limiting (0.08-0.15 = RATE_LIMIT)
+            high_risk_threshold=0.30,     # Adjusted threshold for blocking actions (> 0.30 = BLOCK)
             base_rate_limit_pps=1000,     # Base packet rate limit (packets/second)
             base_rate_limit_bps=1000000,  # Base bandwidth limit (bytes/second)
             base_blacklist_timeout=60,    # Initial blacklist timeout (seconds)
@@ -413,36 +413,26 @@ class AnomalyDetectionController(app_manager.RyuApp):
             # === SECURITY TIER 3: HONEYPOT TRIPWIRE SYSTEM ===
             elif dest_ip and dest_ip in self.mitigation_manager.honeypot_ips:
                 if source_ip:
-                    self.logger.warning(f"🚨 HONEYPOT TRIPWIRE: {source_ip} -> {dest_ip} - CRITICAL THREAT")
-                    self.blacklist.add(source_ip)
-                    
-                    # Apply maximum security response for honeypot interaction
+                    self.logger.info(f"🪤 HONEYPOT INTERACTION: {source_ip} -> {dest_ip} - Attacker observed, traffic allowed")
                     mitigation_action = self.mitigation_manager.risk_based_mitigation(
                         flow_stats=stat,
-                        ml_confidence=1.0,  # Maximum confidence for honeypot hits
+                        ml_confidence=1.0,
                         source_ip=source_ip,
-                        dest_ip=dest_ip,
-                        force_block=True
+                        dest_ip=dest_ip
                     )
-                    
                     if mitigation_action:
-                        self.logger.info(f"🛡️ HONEYPOT PROTECTION: Applied {mitigation_action['action']} for {source_ip}")
-                    
-                    # Remove existing flow and install high-priority drop rule
-                    try:
+                        self.logger.info(f"🛡️ HONEYPOT LOGGED: {mitigation_action}")
+                        # --- Ensure redirected traffic goes to honeypot port 22 ---
                         datapath = ev.msg.datapath
-                        self.remove_flow(datapath, stat.match)
-                        
-                        # Install maximum priority drop rule for ongoing protection
                         parser = datapath.ofproto_parser
                         ofproto = datapath.ofproto
-                        drop_match = parser.OFPMatch(ipv4_src=source_ip, ipv4_dst=dest_ip, eth_type=0x0800)
-                        drop_actions = []  # Empty actions list = DROP
-                        self.add_flow(datapath, 32767, drop_match, drop_actions)  # Maximum priority
-                        
-                        self.logger.info(f"🚫 HONEYPOT SHIELD: Installed drop rule {source_ip} -> {dest_ip}")
-                    except Exception as e:
-                        self.logger.error(f"Failed to install honeypot protection: {e}")
+                        match = parser.OFPMatch(ipv4_src=source_ip, ipv4_dst=dest_ip, eth_type=0x0800)
+                        actions = [
+                            parser.OFPActionSetField(ipv4_dst=dest_ip),
+                            parser.OFPActionSetField(tcp_dst=22),
+                            parser.OFPActionOutput(ofproto.OFPP_NORMAL)
+                        ]
+                        self.add_flow(datapath, 10, match, actions)
                     continue
                 else:
                     self.logger.error(f"🚨 HONEYPOT HIT: Unable to extract source IP from flow {stat.match}")

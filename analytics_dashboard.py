@@ -310,9 +310,9 @@ def create_risk_score_histogram(mitigation_df):
         )])
         
         # Add vertical lines for risk thresholds
-        fig.add_vline(x=0.3, line_dash="dash", line_color="orange", 
+        fig.add_vline(x=0.15, line_dash="dash", line_color="orange", 
                      annotation_text="Medium Risk Threshold", annotation_position="top")
-        fig.add_vline(x=0.7, line_dash="dash", line_color="red",
+        fig.add_vline(x=0.3, line_dash="dash", line_color="red",
                      annotation_text="High Risk Threshold", annotation_position="top")
         
         fig.update_layout(
@@ -383,6 +383,13 @@ def main():
     st.markdown('<h1 class="main-header">🛡️ SDN Security Operations Center</h1>', unsafe_allow_html=True)
     st.markdown('<p class="sub-header">Real-time ML-driven network security monitoring and threat mitigation analytics</p>', unsafe_allow_html=True)
     
+    # --- Honeypot Analytics Dashboard Link ---
+    st.markdown("""
+    <div style='text-align: right; margin-bottom: 1rem;'>
+        <a href="http://localhost:8502" target="_blank" style="font-size:1.1rem; color:#fff; background:#764ba2; padding:0.5em 1em; border-radius:6px; text-decoration:none; box-shadow:0 2px 4px rgba(0,0,0,0.08);">🍯 View Honeypot Analytics Dashboard</a>
+    </div>
+    """, unsafe_allow_html=True)
+
     # Status indicators
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:

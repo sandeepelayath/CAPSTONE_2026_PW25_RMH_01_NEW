@@ -83,7 +83,7 @@ class RiskBasedMitigationManager:
     """
     
     def __init__(self, controller_ref, 
-                 low_risk_threshold=0.08, medium_risk_threshold=0.12, high_risk_threshold=0.15,
+                 low_risk_threshold=0.08, medium_risk_threshold=0.15, high_risk_threshold=0.30,
                  base_rate_limit_pps=1000, base_rate_limit_bps=1000000,
                  base_blacklist_timeout=60, max_blacklist_timeout=3600,
                  whitelist_duration=86400, whitelist_decay_rate=0.1,

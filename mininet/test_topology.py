@@ -32,6 +32,7 @@ class EnhancedTestTopology(Topo):
         # Additional hosts for advanced testing
         h7 = self.addHost('h7', ip='10.0.0.7/24')  # Whitelist candidate
         h8 = self.addHost('h8', ip='10.0.0.8/24')  # Blacklist candidate
+        h9 = self.addHost('h9', ip='10.0.0.9/24')  # Honeypot host
         
         # Host-to-switch links with traffic control
         self.addLink(h1, s1, cls=TCLink, bw=10)
@@ -42,6 +43,7 @@ class EnhancedTestTopology(Topo):
         self.addLink(h6, s3, cls=TCLink, bw=10)
         self.addLink(h7, s1, cls=TCLink, bw=10)
         self.addLink(h8, s2, cls=TCLink, bw=10)
+        self.addLink(h9, s3, cls=TCLink, bw=10)  # Connect honeypot to s3
         
         # Switch-to-switch links
         self.addLink(s1, s2, cls=TCLink, bw=20)
@@ -94,7 +96,7 @@ def test_risk_based_mitigations(net):
     # Reset controller state for consistent results
     reset_controller_state()
     
-    h1, h2, h3, h4, h5, h6, h7, h8 = net.get('h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'h7', 'h8')
+    h1, h2, h3, h4, h5, h6, h7, h8, h9 = net.get('h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'h7', 'h8', 'h9')
     
     # Setup services on target hosts
     setup_test_services(net)
@@ -115,6 +117,14 @@ def test_risk_based_mitigations(net):
     
     # Test 3: Medium Risk Traffic (Should trigger rate limiting)
     test_medium_risk_traffic(h4, h1, h2)
+    
+    # Explicitly generate honeypot traffic from all attacker hosts
+    info("🚀 Starting  explicit traffic to honeypot (h9)")
+
+    for attacker in [h3, h4, h7, h8]:
+        attacker.cmd('nc -w 1 10.0.0.9 22 < /dev/null > /dev/null 2>&1')
+        attacker.cmd('telnet 10.0.0.9 22 < /dev/null > /dev/null 2>&1')
+        time.sleep(0.2)
     
     # Test 4: High Risk Traffic (Should trigger short timeout + blacklisting)
     test_high_risk_traffic(h5, h1, h2)
@@ -170,6 +180,7 @@ def test_risk_based_mitigations(net):
         info("⚠️ Continuous attacks not available, using standard wait")
         time.sleep(30)
     
+  
     # Display final test results
     display_test_results()
 
@@ -401,7 +412,7 @@ def test_mixed_traffic_scenario(net):
     info("="*60)
     info(f"📋 Expected: Different mitigations for different sources simultaneously\n")
     
-    h1, h2, h3, h4, h5, h6, h7, h8 = net.get('h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'h7', 'h8')
+    h1, h2, h3, h4, h5, h6, h7, h8, h9 = net.get('h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'h7', 'h8', 'h9')
     
     info("🔄 Starting mixed traffic simulation...\n")
     
@@ -814,6 +825,14 @@ def start_network():
     )
     
     net.start()
+    # Start simple honeypot on h9 (10.0.0.9) using honeypot.py in the same folder
+    try:
+        h9 = net.get('h9')
+        # Start honeypot in background using relative path
+        h9.cmd('nohup python3 honeypot.py &')
+        info("[INFO] Simple honeypot started on h9 (10.0.0.9:22) using honeypot.py in mininet folder\n")
+    except Exception as e:
+        info(f"[WARN] Could not start honeypot on h9: {e}\n")
     
     info("\n[INFO] Waiting for switches to connect to the Ryu controller...\n")
     time.sleep(5)

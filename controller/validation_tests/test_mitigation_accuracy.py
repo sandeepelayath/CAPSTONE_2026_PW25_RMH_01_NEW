@@ -77,8 +77,8 @@ class MitigationAccuracyValidator:
         self.mitigation_manager = RiskBasedMitigationManager(
             controller_ref=self.mock_controller,
             low_risk_threshold=0.08,
-            medium_risk_threshold=0.18, 
-            high_risk_threshold=0.25
+            medium_risk_threshold=0.15, 
+            high_risk_threshold=0.30
         )
         
         self.test_results = []
@@ -86,7 +86,7 @@ class MitigationAccuracyValidator:
         self.failed_tests = 0
         
         print("🧪 Mitigation Accuracy Validator Initialized")
-        print(f"   Risk Thresholds: LOW<{0.08}, MEDIUM<{0.18}, HIGH<{0.25}")
+        print(f"   Risk Thresholds: LOW<{0.08}, MEDIUM<{0.15}, HIGH<{0.30}")
 
     def test_whitelist_host_allowed(self):
         """Test Case 1: Whitelisted host traffic should be ALLOWED"""
