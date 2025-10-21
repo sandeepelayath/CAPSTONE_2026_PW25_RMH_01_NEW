@@ -52,15 +52,16 @@ This pre trained model is loaded and used in FlowClassifier (Capstone_Phase3/con
 
 
 ## Execution Workflow
-### Terminal 1 (Controller):
+
+### Terminal 1 (Mininet Topology Simulation):
+```bash
+cd Capstone_Phase3/mininet/
+sudo python3 test1.py or test2.py or test3.py or test_topology.py 
+```
+### Terminal 2 (Controller):
 ```bash
 cd Capstone_Phase3/controller/
 ryu-manager ryu_controller.py
-```
-### Terminal 2 (Mininet Topology Simulation):
-```bash
-cd Capstone_Phase3/mininet/
-sudo python3 test_topology.py
 ```
 ### Terminal 3 (Start Analytics Dashboard):
 ```bash

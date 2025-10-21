@@ -10,6 +10,15 @@ import sys
 import json
 from datetime import datetime
 
+# --- CLEANUP SECTION ---
+info("🧹 Cleaning up old logs and Mininet state...\n")
+os.system("sudo rm -f /tmp/honeypot_logs/event_*.json")
+os.system("sudo rm -f /tmp/honeypot_log.txt")
+os.system("sudo rm -f /home/sandeep/Capstone_Phase3/controller/risk_mitigation_actions.json")
+os.system("sudo rm -rf /home/sandeep/Capstone_Phase3/mininet/test_logs/*")
+os.system("sudo mn -c")
+info("✅ Cleanup complete. Environment ready.\n")
+# ------------------------
 
 class EnhancedTestTopology(Topo):
     def build(self):

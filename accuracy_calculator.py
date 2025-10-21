@@ -399,10 +399,10 @@ class SystemAccuracyCalculator:
 
     def analyze_system_performance(self, metrics_files):
         """Analyze system performance metrics"""
-        print(f"\n🖥️ SYSTEM PERFORMANCE ANALYSIS:")
+        #print(f"\n🖥️ SYSTEM PERFORMANCE ANALYSIS:")
         
         if not metrics_files:
-            print(f"  ⚠️ No performance metrics available")
+            #print(f"  ⚠️ No performance metrics available")
             return {}
         
         all_cpu_usage = []
