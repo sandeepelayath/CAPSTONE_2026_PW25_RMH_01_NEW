@@ -121,9 +121,11 @@ def test_risk_based_mitigations(net):
     # Explicitly generate honeypot traffic from all attacker hosts
     info("🚀 Starting  explicit traffic to honeypot (h9)")
 
-    for attacker in [h3, h4, h7, h8]:
-        attacker.cmd('nc -w 1 10.0.0.9 2222 < /dev/null > /dev/null 2>&1')
-        attacker.cmd('telnet 10.0.0.9 2222 < /dev/null > /dev/null 2>&1')
+    for attacker in [h5, h6, h8]:
+        for i in range(10):
+            attacker.cmd(f'nc -w 1 10.0.0.9 2222 < /dev/null > /dev/null 2>&1')
+            attacker.cmd(f'telnet 10.0.0.9 2222 < /dev/null > /dev/null 2>&1')
+            time.sleep(0.1)
         time.sleep(0.2)
     
     # Test 4: High Risk Traffic (Should trigger short timeout + blacklisting)
