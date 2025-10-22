@@ -74,7 +74,8 @@ cd Capstone_Phase3/
 python3 accuracy_calculator.py 
 ```
 ## Cleanup
-After execution, clean up Mininet:
+Cleanup is done at the start of each test script.
+For explicit cleanup, run:
 ```bash
 sudo mn -c
 ```
@@ -86,5 +87,5 @@ sudo mn -c
 - **Basavraj Naikal**
 
 ## License
-This project is open-source and available under the MIT License.
+This project is open-source and done as part of final year capstone project in PES University, Bangalore.
 
