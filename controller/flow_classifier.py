@@ -95,9 +95,9 @@ class FlowClassifier:
     """
     
     def __init__(self, 
-                 model_path='../lstm_finetuned_ml_model/lstm_model_combined.keras', 
-                 scaler_path='../lstm_finetuned_ml_model/scaler.pkl', 
-                 features_path='../lstm_finetuned_ml_model/feature_names.pkl'):
+                 model_path='../finetuned_ML_model_stored/lstm_model_combined.keras', 
+                 scaler_path='../finetuned_ML_model_stored/scaler.pkl', 
+                 features_path='../finetuned_ML_model_stored/feature_names.pkl'):
         """
         Initialize the flow classifier with pre-trained model artifacts.
         
