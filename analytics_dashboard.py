@@ -77,7 +77,7 @@ st.markdown("""
 
 # Auto-refresh: prefer `streamlit-autorefresh` if available, otherwise fall back to a small JS reload.
 # Set AUTO_REFRESH_MS to desired interval in milliseconds (e.g. 3000 = 3 seconds).
-AUTO_REFRESH_MS = 3000
+AUTO_REFRESH_MS = 60000 
 try:
     from streamlit_autorefresh import st_autorefresh
     # This will cause Streamlit to rerun the script every AUTO_REFRESH_MS milliseconds.
@@ -408,14 +408,12 @@ def main():
         "🛡️ Active Mitigations", 
         "⚙️ System Configuration",
         "🎯 Threat Intelligence",
-        "📈 Analytics & Reports",
+        # "📈 Analytics & Reports",  # Removed from menu
         "🔍 Source Investigation"
     ], help="Navigate between different dashboard sections")
 
     if tab == "🏠 Executive Dashboard":
-        st.markdown("## 📊 Executive Security Dashboard")
         st.markdown("---")
-        
         # Key Performance Indicators (KPIs)
         if not mitigation_df.empty:
             # Calculate metrics
@@ -425,13 +423,16 @@ def main():
             block_actions = mitigation_df[mitigation_df['action_type'].isin(['SHORT_TIMEOUT_BLOCK', 'BLOCK'])] if 'action_type' in mitigation_df.columns else pd.DataFrame()
             
             # Risk calculations
+            low_risk_threshold = 0.08
+            medium_risk_threshold = 0.15
+            high_risk_threshold = 0.30
             if 'risk_score' in mitigation_df.columns:
                 risk_scores = pd.to_numeric(mitigation_df['risk_score'], errors='coerce').dropna()
                 avg_risk = risk_scores.mean() if len(risk_scores) > 0 else 0
                 max_risk = risk_scores.max() if len(risk_scores) > 0 else 0
-                high_risk_events = (risk_scores >= 0.7).sum() if len(risk_scores) > 0 else 0
-                # Calculate low risk flows (using thresholds from mitigation manager: < 0.08)
-                low_risk_events = (risk_scores < 0.08).sum() if len(risk_scores) > 0 else 0
+                high_risk_events = (risk_scores >= high_risk_threshold).sum() if len(risk_scores) > 0 else 0
+                # Calculate low risk flows (using thresholds from mitigation manager: < low_risk_threshold)
+                low_risk_events = (risk_scores < low_risk_threshold).sum() if len(risk_scores) > 0 else 0
             else:
                 avg_risk = max_risk = high_risk_events = low_risk_events = 0
             
@@ -508,7 +509,7 @@ def main():
             st.markdown("---")
             
             # Charts section
-            st.markdown("### 📈 Analytics & Visualizations")
+            st.markdown("### Risk Score Distribution Charts")
             
             chart_col1, chart_col2 = st.columns(2)
             
@@ -539,16 +540,8 @@ def main():
                     else:
                         st.info("Risk score data not available")
             
-            # Timeline chart (full width)
-            st.markdown("#### 🕒 Security Events Timeline")
-            timeline_chart = create_risk_timeline_chart(mitigation_df)
-            if timeline_chart:
-                st.plotly_chart(timeline_chart, use_container_width=True)
-            else:
-                st.info("Timeline data not available - enable plotly for interactive charts")
-            
             # Top sources chart
-            st.markdown("#### 🎯 Top Threat Sources")
+            st.markdown("#### 🎯 List of  Sources")
             sources_chart = create_top_sources_chart(mitigation_df)
             if sources_chart:
                 st.plotly_chart(sources_chart, use_container_width=True)
@@ -559,7 +552,6 @@ def main():
                     st.dataframe(top_sources.to_frame('Event Count'), use_container_width=True)
                 else:
                     st.info("Source IP data not available")
-            
         else:
             # No data available
             st.warning("⚠️ No mitigation data available")
@@ -703,19 +695,19 @@ def main():
                 st.info("No recent blocking actions found")
         
         # Show conflict resolution information
-        st.divider()
-        st.subheader("🔧 List Management")
-        st.info("""
-        **List Priority Order:**
-        1. **Whitelist** (Highest Priority) - Bypasses all security checks
-        2. **Blacklist** (High Priority) - Blocks traffic immediately  
-        3. **Honeypot** (Special) - Triggers immediate blocking of sources
-        
-        **Automatic Conflict Resolution:**
-        - Adding to whitelist automatically removes from blacklist
-        - Adding to blacklist automatically removes from whitelist
-        - This ensures mutual exclusivity and consistent behavior
-        """)
+        # st.divider()
+        # st.subheader("🔧 List Management")
+        # st.info("""
+        # **List Priority Order:**
+        # 1. **Whitelist** (Highest Priority) - Bypasses all security checks
+        # 2. **Blacklist** (High Priority) - Blocks traffic immediately  
+        # 3. **Honeypot** (Special) - Triggers immediate blocking of sources
+        #
+        # **Automatic Conflict Resolution:**
+        # - Adding to whitelist automatically removes from blacklist
+        # - Adding to blacklist automatically removes from whitelist
+        # - This ensures mutual exclusivity and consistent behavior
+        # """)
         
         if total_monitored > 0:
             st.success(f"✅ System is monitoring {total_monitored} IPs across all lists")
@@ -837,27 +829,6 @@ def main():
             )
         else:
             st.info("No threat intelligence data available")
-
-    elif tab == "� Analytics & Reports":
-        st.header("📈 Security Analytics & Reports")
-        st.markdown("---")
-        if not mitigation_df.empty:
-            recent = mitigation_df.tail(20)
-            st.markdown("### 📋 Recent Security Activities")
-            st.dataframe(
-                recent[['timestamp', 'action_type', 'source_ip', 'risk_score', 'risk_level', 'details']],
-                use_container_width=True,
-                column_config={
-                    "timestamp": st.column_config.DatetimeColumn("Timestamp"),
-                    "action_type": st.column_config.TextColumn("Action"),
-                    "source_ip": st.column_config.TextColumn("Source IP"),
-                    "risk_score": st.column_config.NumberColumn("Risk Score", format="%.3f"),
-                    "risk_level": st.column_config.TextColumn("Risk Level"),
-                    "details": st.column_config.TextColumn("Details")
-                }
-            )
-        else:
-            st.info("No analytics data available")
 
     elif tab == "🔍 Source Investigation":
         st.header("🔍 Detailed Source Investigation")
