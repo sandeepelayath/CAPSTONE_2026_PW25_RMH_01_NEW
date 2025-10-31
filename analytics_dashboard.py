@@ -853,18 +853,16 @@ def main():
                         st.metric("Avg Risk", f"{risk_scores.mean():.3f}")
                     
                     st.markdown("---")
-                    
-                    # Action breakdown
-                    st.markdown("### 📊 Action Breakdown")
-                    action_counts = source_actions['action_type'].value_counts()
-                    st.dataframe(action_counts.to_frame('Count'), use_container_width=True)
-                    
-                    # Recent activity
-                    st.markdown("### 🕒 Recent Activity (Last 10 events)")
-                    st.dataframe(
-                        source_actions[['timestamp', 'action_type', 'risk_score', 'risk_level', 'details']].tail(10),
-                        use_container_width=True
-                    )
+                    # Action breakdown in expander for cleaner look
+                    with st.expander("📊 Action Breakdown", expanded=False):
+                        action_counts = source_actions['action_type'].value_counts()
+                        st.dataframe(action_counts.to_frame('Count'), use_container_width=True)
+                    # Recent activity in expander for cleaner look
+                    with st.expander("🕒 Recent Activity (Last 10 events)", expanded=False):
+                        st.dataframe(
+                            source_actions[['timestamp', 'action_type', 'risk_score', 'risk_level', 'details']].tail(10),
+                            use_container_width=True
+                        )
         else:
             st.info("No source data available for investigation")
 
