@@ -8,6 +8,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import numpy as np
+import re
 
 st.set_page_config(
     page_title="SDN Security Analytics Dashboard", 
@@ -121,7 +122,6 @@ def load_ip_lists():
                 content = f.read()
                 # Look for whitelist definition
                 if 'self.whitelist = set([' in content:
-                    import re
                     whitelist_match = re.search(r'self\.whitelist = set\(\[(.*?)\]\)', content, re.DOTALL)
                     if whitelist_match:
                         whitelist_str = whitelist_match.group(1)
@@ -146,7 +146,6 @@ def load_ip_lists():
                 content = f.read()
                 # Look for honeypot_ips definition
                 if 'self.honeypot_ips = {' in content:
-                    import re
                     honeypot_match = re.search(r'self\.honeypot_ips = \{(.*?)\}', content, re.DOTALL)
                     if honeypot_match:
                         honeypot_str = honeypot_match.group(1)
@@ -195,31 +194,29 @@ def load_data():
     
     return anomaly_data, mitigation_data
 
+# Shared color map for all charts
+ACTION_COLOR_MAP = {
+    'ALLOW': '#28a745',
+    'RATE_LIMIT': '#ffc107',
+    'SHORT_TIMEOUT_BLOCK': '#fd7e14',
+    'BLOCK': '#dc3545',
+    'HONEYPOT': '#764ba2',
+}
+
 def create_risk_distribution_chart(mitigation_df):
-    """Create a risk distribution donut chart"""
+    """Create a risk distribution donut chart with unified color coding"""
     if mitigation_df.empty or 'action_type' not in mitigation_df.columns:
         return None
-    
     action_counts = mitigation_df['action_type'].value_counts()
-    
-    # Map actions to risk levels and colors
-    risk_mapping = {
-        'ALLOW': ('Low Risk', '#28a745'),
-        'RATE_LIMIT': ('Medium Risk', '#ffc107'), 
-        'SHORT_TIMEOUT_BLOCK': ('High Risk', '#fd7e14'),
-        'BLOCK': ('Critical Risk', '#dc3545')
-    }
-    
-    labels = []
-    values = []
-    colors = []
-    
-    for action, count in action_counts.items():
-        risk_level, color = risk_mapping.get(action, (action, '#6c757d'))
-        labels.append(f"{risk_level}<br>({action})")
-        values.append(count)
-        colors.append(color)
-    
+    # Ensure all action types are present
+    all_actions = list(ACTION_COLOR_MAP.keys())
+    for action in all_actions:
+        if action not in action_counts:
+            action_counts[action] = 0
+    action_counts = action_counts[all_actions]
+    labels = [f"{action}" for action in action_counts.index]
+    values = action_counts.values
+    colors = [ACTION_COLOR_MAP.get(action, '#6c757d') for action in action_counts.index]
     try:
         fig = go.Figure(data=[go.Pie(
             labels=labels, 
@@ -230,7 +227,6 @@ def create_risk_distribution_chart(mitigation_df):
             textfont_size=12,
             hovertemplate='<b>%{label}</b><br>Count: %{value}<br>Percentage: %{percent}<extra></extra>'
         )])
-        
         fig.update_layout(
             title={
                 'text': "Risk Distribution by Action Type",
@@ -332,39 +328,35 @@ def create_risk_score_histogram(mitigation_df):
         return None
 
 def create_top_sources_chart(mitigation_df):
-    """Create a bar chart of top threat sources"""
-    if mitigation_df.empty or 'source_ip' not in mitigation_df.columns:
+    """Create a stacked bar chart of top threat sources, color-coded by action type proportions, with unified legend."""
+    if mitigation_df.empty or 'source_ip' not in mitigation_df.columns or 'action_type' not in mitigation_df.columns:
         return None
-    
     try:
         # Get top 10 sources by event count
-        top_sources = mitigation_df['source_ip'].value_counts().head(10)
-        
-        # Calculate average risk score for each source
-        avg_risk = mitigation_df.groupby('source_ip')['risk_score'].apply(
-            lambda x: pd.to_numeric(x, errors='coerce').mean()
-        )
-        
+        top_sources = mitigation_df['source_ip'].value_counts().head(10).index.tolist()
+        df_top = mitigation_df[mitigation_df['source_ip'].isin(top_sources)]
+        # Pivot: index=source_ip, columns=action_type, values=count
+        action_counts = df_top.groupby(['source_ip', 'action_type']).size().unstack(fill_value=0)
+        # Ensure all action types are present
+        all_actions = list(ACTION_COLOR_MAP.keys())
+        for action in all_actions:
+            if action not in action_counts.columns:
+                action_counts[action] = 0
+        action_counts = action_counts[all_actions]  # consistent order
         fig = go.Figure()
-        
-        # Color bars based on average risk score
-        colors = ['#dc3545' if avg_risk.get(ip, 0) > 0.7 else 
-                 '#fd7e14' if avg_risk.get(ip, 0) > 0.3 else '#28a745' 
-                 for ip in top_sources.index]
-        
-        fig.add_trace(go.Bar(
-            x=top_sources.index,
-            y=top_sources.values,
-            marker_color=colors,
-            text=top_sources.values,
-            textposition='auto',
-            hovertemplate='<b>%{x}</b><br>Events: %{y}<br>Avg Risk: %{customdata:.3f}<extra></extra>',
-            customdata=[avg_risk.get(ip, 0) for ip in top_sources.index]
-        ))
-        
+        for action in all_actions:
+            fig.add_trace(go.Bar(
+                x=action_counts.index,
+                y=action_counts[action],
+                name=action,
+                marker_color=ACTION_COLOR_MAP.get(action, '#888'),
+                width=0.15,
+                hovertemplate=f"<b>%{{x}}</b><br>{action}: %{{y}}<extra></extra>",
+            ))
         fig.update_layout(
+            barmode='stack',
             title={
-                'text': "Top 10 Source IPs by Event Count",
+                'text': "Top 10 Source IPs by Event Count (Stacked by Action Type)",
                 'x': 0.5,
                 'xanchor': 'center',
                 'font': {'size': 18, 'color': '#1f77b4'}
@@ -372,7 +364,9 @@ def create_top_sources_chart(mitigation_df):
             xaxis_title="Source IP",
             yaxis_title="Event Count",
             height=400,
-            margin=dict(l=50, r=20, t=60, b=50)
+            width=500,
+            margin=dict(l=80, r=80, t=60, b=50),
+            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="center", x=0.5)
         )
         return fig
     except (ImportError, Exception):
@@ -544,7 +538,15 @@ def main():
             st.markdown("#### 🎯 List of  Sources")
             sources_chart = create_top_sources_chart(mitigation_df)
             if sources_chart:
-                st.plotly_chart(sources_chart, use_container_width=True)
+                # Wrap the chart in a fixed-width, centered div to prevent it from filling the page
+                with st.container():
+                    st.markdown("""
+                    <div style='width:520px; margin: 0 auto; display: flex; justify-content: center;'>
+                    """, unsafe_allow_html=True)
+                    st.plotly_chart(sources_chart)
+                    st.markdown("""
+                    </div>
+                    """, unsafe_allow_html=True)
             else:
                 # Fallback top sources table
                 if 'source_ip' in mitigation_df.columns:

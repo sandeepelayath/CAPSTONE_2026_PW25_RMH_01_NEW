@@ -56,7 +56,7 @@ else:
             first_seen=('timestamp', 'min'),
             last_seen=('timestamp', 'max')
         ).sort_values('count', ascending=False).head(10).reset_index()
-        st.dataframe(attacker_stats, use_container_width=True)
+        st.dataframe(attacker_stats)
     else:
         st.info("No attacker IP data available.")
     st.markdown("---")
@@ -76,7 +76,32 @@ else:
     # Bar chart: Number of events per source IP
     st.subheader("Honeypot Event Frequency (Bar Chart)")
     event_counts = df["src_ip"].value_counts()
-    st.bar_chart(event_counts)
+    import plotly.graph_objects as go
+    bar_fig = go.Figure()
+    bar_fig.add_trace(go.Bar(
+        x=event_counts.index,
+        y=event_counts.values,
+        marker_color="#434fa0",
+        width=0.15,  # Narrow bars
+        text=event_counts.values,
+        textposition='auto',
+    ))
+    bar_fig.update_layout(
+        title_text="",
+        xaxis_title="Source IP",
+        yaxis_title="Event Count",
+        height=350,
+        width=500,
+        margin=dict(l=60, r=60, t=30, b=50)
+    )
+    with st.container():
+        st.markdown("""
+        <div style='width:520px; margin: 0 auto; display: flex; justify-content: center;'>
+        """, unsafe_allow_html=True)
+        st.plotly_chart(bar_fig)
+        st.markdown("""
+        </div>
+        """, unsafe_allow_html=True)
 
     # Line chart: Traffic to honeypot from different IPs over time (show all data)
     st.subheader("Honeypot Event Timeline (Line Chart)")
