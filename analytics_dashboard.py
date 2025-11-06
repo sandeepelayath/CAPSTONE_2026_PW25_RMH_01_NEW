@@ -201,6 +201,7 @@ ACTION_COLOR_MAP = {
     'SHORT_TIMEOUT_BLOCK': '#fd7e14',
     'BLOCK': '#dc3545',
     'HONEYPOT': '#764ba2',
+    'REDIRECT_TO_HONEYPOT': '#8e44ad',  # Added for redirect actions
 }
 
 def create_risk_distribution_chart(mitigation_df):

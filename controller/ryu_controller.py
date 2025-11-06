@@ -63,7 +63,7 @@ class AnomalyDetectionController(app_manager.RyuApp):
             controller_ref=self,
             low_risk_threshold=0.08,
             medium_risk_threshold=0.15,
-            high_risk_threshold=0.30,
+            high_risk_threshold=0.272,
             base_rate_limit_pps=1000,
             base_rate_limit_bps=1000000,
             base_blacklist_timeout=60,
